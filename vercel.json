@@ -1,0 +1,11 @@
+{
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "source": true
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
