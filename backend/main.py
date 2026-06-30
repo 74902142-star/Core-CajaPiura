@@ -45,6 +45,21 @@ async def startup():
         print(f"⚠️ Supabase no disponible (usando datos en memoria): {e}")
 
 
+@app.get("/debug-version")
+async def debug_version():
+    import supabase
+    import pkg_resources
+    try:
+        ver = pkg_resources.get_distribution("supabase").version
+    except Exception as e:
+        ver = str(e)
+    return {
+        "supabase_version": ver,
+        "supabase_url": os.getenv("SUPABASE_URL"),
+        "supabase_anon_key": os.getenv("SUPABASE_ANON_KEY")
+    }
+
+
 @app.get("/")
 async def root():
     return {"message": "Banco Andino - Caja Piura API v1.0", "status": "running"}
