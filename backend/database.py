@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from passlib.context import CryptContext
+import bcrypt
 
 load_dotenv()
 
@@ -9,8 +9,6 @@ SUPABASE_URL = "https://bphurlirfckhycnwiufr.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_fWqdJUYCyJEs_8HVlW2hcA_QK0Wjpwh"
 
 _supabase: Client = None
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def get_supabase() -> Client:
