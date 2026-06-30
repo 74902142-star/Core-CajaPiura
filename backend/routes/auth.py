@@ -8,32 +8,41 @@ router = APIRouter()
 
 @router.post("/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
-    user = get_user_by_email(request.email)
-    if not user:
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    try:
+        user = get_user_by_email(request.email)
+        if not user:
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    if not verify_password(request.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        if not verify_password(request.password, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    token = create_access_token(data={
-        "sub": str(user["id"]),
-        "email": user["email"],
-        "nombre": user["nombre"],
-        "apellido": user["apellido"],
-        "rol": user["rol"],
-    })
-
-    return LoginResponse(
-        token=token,
-        user={
-            "id": user["id"],
+        token = create_access_token(data={
+            "sub": str(user["id"]),
             "email": user["email"],
             "nombre": user["nombre"],
             "apellido": user["apellido"],
             "rol": user["rol"],
-        },
-        rol=user["rol"],
-    )
+        })
+
+        return LoginResponse(
+            token=token,
+            user={
+                "id": user["id"],
+                "email": user["email"],
+                "nombre": user["nombre"],
+                "apellido": user["apellido"],
+                "rol": user["rol"],
+            },
+            rol=user["rol"],
+        )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        import traceback
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno: {str(e)}\n{traceback.format_exc()}"
+        )
 
 
 @router.get("/verify", response_model=TokenVerifyResponse)

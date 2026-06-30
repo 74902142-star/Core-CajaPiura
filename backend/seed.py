@@ -5,14 +5,12 @@ Ejecutar: python seed.py
 import os
 from dotenv import load_dotenv
 from supabase import create_client
-from passlib.context import CryptContext
+import bcrypt
 
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://bphurlirfckhycnwiufr.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "sb_publishable_fWqdJUYCyJEs_8HVlW2hcA_QK0Wjpwh")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -117,15 +115,22 @@ CLIENTES = [
 
 
 def seed_usuarios():
-    print("Creando usuarios...")
+    print("Creando o actualizando usuarios...")
     for user in USUARIOS:
         try:
+            hashed = bcrypt.hashpw(user["password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
             existing = supabase.table("usuarios").select("*").eq("email", user["email"]).execute()
             if existing.data:
-                print(f"  Usuario {user['email']} ya existe, saltando...")
+                supabase.table("usuarios").update({
+                    "password_hash": hashed,
+                    "nombre": user["nombre"],
+                    "apellido": user["apellido"],
+                    "rol": user["rol"],
+                    "activo": True,
+                }).eq("email", user["email"]).execute()
+                print(f"  Usuario {user['email']} actualizado con nuevo hash de contraseña")
                 continue
 
-            hashed = pwd_context.hash(user["password"])
             supabase.table("usuarios").insert({
                 "email": user["email"],
                 "password_hash": hashed,
@@ -136,7 +141,7 @@ def seed_usuarios():
             }).execute()
             print(f"  Usuario {user['email']} creado exitosamente")
         except Exception as e:
-            print(f"  Error creando {user['email']}: {e}")
+            print(f"  Error creando/actualizando {user['email']}: {e}")
 
 
 def seed_clientes():
