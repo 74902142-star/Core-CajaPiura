@@ -1,9 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
-from schemas import SolicitudClienteRequest
+from schemas import SolicitudClienteRequest, ClienteCreate
 from auth import get_current_user
-from database import get_cliente, add_solicitud, get_solicitudes, get_supabase
+from database import get_cliente, add_solicitud, get_solicitudes, get_supabase, get_cliente_by_dni, add_cliente, update_cliente
 
 router = APIRouter()
+
+
+@router.post("")
+async def crear_o_actualizar_cliente(request: ClienteCreate, user: dict = Depends(get_current_user)):
+    cliente_existente = get_cliente_by_dni(request.dni)
+    cliente_data = request.dict()
+    if cliente_existente:
+        cliente = update_cliente(cliente_existente["id"], cliente_data)
+        return {"message": "Cliente actualizado", "cliente": cliente}
+    else:
+        cliente = add_cliente(cliente_data)
+        return {"message": "Cliente creado", "cliente": cliente}
 
 
 @router.get("/cuentas/{user_id}")

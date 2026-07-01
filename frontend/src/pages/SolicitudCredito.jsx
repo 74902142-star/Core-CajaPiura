@@ -34,10 +34,16 @@ export default function SolicitudCredito() {
       }
       setForm((prev) => ({
         ...prev,
+        id: res.data.id || '',
         nombre: res.data.nombre || prev.nombre,
         apellido: res.data.apellido || prev.apellido,
         direccion: res.data.direccion || prev.direccion,
         telefono: res.data.telefono || prev.telefono,
+        email: res.data.email || prev.email,
+        nombre_negocio: res.data.nombre_negocio || prev.nombre_negocio,
+        antiguedad: res.data.antiguedad_negocio || prev.antiguedad,
+        ingreso: res.data.ingreso_mensual || prev.ingreso,
+        gasto: res.data.gasto_mensual || prev.gasto,
       }));
       Swal.fire('Datos encontrados', `Cliente: ${res.data.nombre} ${res.data.apellido}`, 'success');
     } catch {
@@ -84,14 +90,35 @@ export default function SolicitudCredito() {
   const enviarSolicitud = async () => {
     setLoading(true);
     try {
+      // 1. Registrar o actualizar datos del cliente en la base de datos
+      const clienteRes = await api.post('/api/clientes', {
+        dni: form.dni,
+        nombre: form.nombre,
+        apellido: form.apellido,
+        telefono: form.telefono || null,
+        email: form.email || null,
+        direccion: form.direccion || null,
+        ingreso_mensual: parseFloat(form.ingreso) || 0,
+        gasto_mensual: parseFloat(form.gasto) || 0,
+        nombre_negocio: form.nombre_negocio || null,
+        antiguedad_negocio: form.antiguedad || null,
+      });
+
+      const clienteId = clienteRes.data.cliente?.id;
+      if (!clienteId) {
+        throw new Error("No se pudo obtener el ID del cliente registrado");
+      }
+
+      // 2. Registrar la solicitud con el clienteId real
       const res = await api.post('/api/solicitudes', {
-        cliente_id: 1,
+        cliente_id: clienteId,
         monto: parseFloat(form.monto),
         plazo: parseInt(form.plazo),
         tea: parseFloat(form.tea),
         garantia: form.garantia,
         destino: form.destino,
       });
+
       Swal.fire({
         title: 'Solicitud Enviada',
         html: `
@@ -109,7 +136,7 @@ export default function SolicitudCredito() {
         monto: '', plazo: '12', tea: '18', garantia: '', destino: '',
       });
     } catch (err) {
-      Swal.fire('Error', err.response?.data?.detail || 'No se pudo enviar la solicitud', 'error');
+      Swal.fire('Error', err.response?.data?.detail || err.message || 'No se pudo enviar la solicitud', 'error');
     } finally {
       setLoading(false);
     }
